@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Link Sharing | Load Testing</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@stomp/stompjs@6.1.2/bundles/stomp.umd.min.js"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.9.1/font/bootstrap-icons.css">
+    <style>
+        .workers-status-container {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background-color: #f8f9fa;
+            display: flex;
+            gap: 5px;
+            color: #676767;
+        }
+
+        .w-status {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+        }
+
+        .w-status.ready {
+            background-color: #28a745;
+        }
+
+        .w-status.running {
+            background-color: #edaa16;
+        }
+
+        .w-status.completed {
+            background-color: #0074D9;
+        }
+
+        .w-status.error {
+            background-color: #e74c3c;
+        }
+
+        .w-status.offline {
+            background-color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+<div id="app" class="container mt-5">
+    <div class="workers-status-container">
+        <div v-if="workers.length === 0">NO WORKERS</div>
+        <div v-for="workerStatus in workers">
+            <div :class="['w-status', workerStatus]" :title="workerStatus"></div>
+        </div>
+    </div>
+
+    <!-- Load Test Configuration Form -->
+    <div v-if="!started" class="card">
+        <div class="card-header">
+            <h3>Test Configuration</h3>
+        </div>
+        <div class="card-body">
+            <form @submit.prevent="startLoadTest">
+                <div class="mb-3">
+                    <label for="targetUrl" class="form-label">Target URL</label>
+                    <input type="text" class="form-control" id="targetUrl" v-model="config.targetUrl" placeholder="URL"
+                           required>
+                </div>
+                <div class="mb-3">
+                    <label for="duration" class="form-label">Test Duration (seconds)</label>
+                    <input type="number" class="form-control" id="duration" v-model="config.duration" required min="1">
+                </div>
+                <div class="mb-3">
+                    <label for="concurrentUsers" class="form-label">Concurrent Users (For Each Worker Node)</label>
+                    <input type="number" class="form-control" id="concurrentUsers" v-model="config.numOfUsers" required
+                           min="1">
+                </div>
+                <div class="mb-3">
+                    <label for="rampUpTime" class="form-label">Ramp-up Time (seconds)</label>
+                    <input type="number" class="form-control" id="rampUpTime" v-model="config.rampUpTime" required
+                           min="0">
+                </div>
+                <button type="submit" class="btn btn-primary" :disabled="!canStartTest || starting">
+                    Start Load Test
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div v-else>
+        <div class="card-header">
+            <h3 v-if="isCompleted">Test Completed</h3>
+            <h3 v-else>Test in Progress</h3>
+        </div>
+        <div class="card-body">
+            <div class="alert alert-info">
+                <h4 class="mb-3">Backoffice Stats</h4>
+                <p><strong>Requests Sent:</strong> {{ stats.backoffice.requestsSent }} </p>
+                <p><strong>Requests Failed:</strong> {{ stats.backoffice.requestsFailed }} </p>
+                <p><strong>Average Response Time:</strong> {{ stats.backoffice.averageResponseTime }} ms</p>
+                <h4 class="mb-3">Public Stats</h4>
+                <p><strong>Requests Sent:</strong> {{ stats.public.requestsSent }} </p>
+                <p><strong>Requests Failed:</strong> {{ stats.public.requestsFailed }} </p>
+                <p><strong>Average Response Time:</strong> {{ stats.public.averageResponseTime }} ms</p>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    const {createApp} = Vue
+
+    createApp({
+        mounted() {
+            fetch('/api/reset', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(this.config)
+            }).then(resp => resp.text());
+            setInterval(() => {
+                fetch('/api/workers/status')
+                    .then(resp => resp.json())
+                    .then(workers => this.workers = workers);
+            }, 1000);
+        },
+        data() {
+            return {
+                config: {
+                    targetUrl: 'http://localhost:9000',
+                    duration: 20,
+                    numOfUsers: 5,
+                    rampUpTime: 10,
+                },
+                starting: false,
+                started: false,
+                stats: {
+                    public: {
+                        requestsSent: 0,
+                        requestsFailed: 0,
+                        averageResponseTime: 0,
+                    },
+                    backoffice: {
+                        requestsSent: 0,
+                        requestsFailed: 0,
+                        averageResponseTime: 0,
+                    }
+                },
+                workers: [],
+            }
+        },
+        computed: {
+            showRunning() {
+                return this.workers.some(w => w === 'running');
+            },
+            isCompleted() {
+                return this.workers.every(w => w === 'completed');
+            },
+            canStartTest() {
+                return this.workers.length > 0 && this.workers.every(w => w === 'ready');
+            },
+        },
+        methods: {
+            async startLoadTest() {
+                this.starting = true;
+                try {
+                    let resp = await fetch('/api/start', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(this.config)
+                    });
+                    resp = await resp.text();
+                    this.started = true;
+                } catch (e) {
+                    console.error(e)
+                } finally {
+                    this.starting = false;
+                }
+                this.statsRequestInterval();
+            },
+            statsRequestInterval() {
+                setInterval(() => {
+                    fetch('/api/progress')
+                        .then(resp => resp.json())
+                        .then(stats => {
+                            this.stats = stats;
+                        });
+                }, 1000);
+            }
+        },
+    }).mount('#app')
+</script>
+</body>
+</html>
