@@ -7,7 +7,6 @@ import linksharing.dto.InfoDto;
 import linksharing.dto.LinkDto;
 import linksharing.dto.UserDto;
 import org.slf4j.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -41,7 +40,6 @@ public class ApiRestController {
 
     @GetMapping("/api/user/{email}/exists")
     ResponseEntity<?> userExists(@PathVariable String email) {
-        log.info("Checking if user exists: {}", email);
         boolean exists = userRepo.existsById(email);
         if (!exists) {
             return ResponseEntity.notFound().build();
@@ -105,7 +103,6 @@ public class ApiRestController {
 
     @GetMapping("/api/user/{email}/pic")
     ResponseEntity<?> getProfilePicture(@PathVariable String email) {
-        log.info("Getting profile picture for user: {}", email);
         Path imagePath = Paths.get("pics", email + ".jpg");
         if (!Files.exists(imagePath)) {
             return ResponseEntity.notFound().build();
@@ -138,7 +135,6 @@ public class ApiRestController {
 
     @GetMapping("/api/public/{email}")
     ResponseEntity<?> getPublicProfile(@PathVariable String email) {
-        log.info("Getting public profile for user: {}", email);
         var userOpt = userRepo.findById(email);
         if (userOpt.isEmpty()) {
             return ResponseEntity.notFound().build();
