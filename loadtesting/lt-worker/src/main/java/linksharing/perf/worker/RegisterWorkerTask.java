@@ -15,10 +15,18 @@ import java.util.Map;
 public class RegisterWorkerTask implements ApplicationRunner {
 
     private final RestTemplate rest;
+
     @Value("${server.host}")
     private String host;
+
     @Value("${server.port}")
     private int port;
+
+    @Value("${master.host}")
+    private String masterHost;
+
+    @Value("${master.port}")
+    private int masterPort;
 
     public RegisterWorkerTask(RestTemplate rest) {
         this.rest = rest;
@@ -34,6 +42,6 @@ public class RegisterWorkerTask implements ApplicationRunner {
                 "base", "http://" + host + ":" + port
         );
         var request = new HttpEntity<>(body, headers);
-        rest.postForEntity("http://master.internal:8080/api/workers", request, String.class);
+        rest.postForEntity("http://" + masterHost + ":" + masterPort + "/api/workers", request, String.class);
     }
 }

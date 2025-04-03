@@ -7,6 +7,7 @@ import linksharing.dto.InfoDto;
 import linksharing.dto.LinkDto;
 import linksharing.dto.UserDto;
 import org.slf4j.Logger;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -20,11 +21,15 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 @Service
 public class AppService {
-    private static final Logger log = org.slf4j.LoggerFactory.getLogger(AppService.class);
-    private final UserRepository userRepo;
 
-    public AppService(UserRepository userRepo) {
+    private static final Logger log = org.slf4j.LoggerFactory.getLogger(AppService.class);
+
+    private final UserRepository userRepo;
+    private final String picsDir;
+
+    public AppService(UserRepository userRepo, @Value("pics.directory") String picsDir) {
         this.userRepo = userRepo;
+        this.picsDir = picsDir;
     }
 
     public boolean userExists(String email) {
@@ -58,7 +63,7 @@ public class AppService {
             user.setImageUrl("/api/user/" + email + "/pic");
             userRepo.save(user);
 
-            Path uploadDir = Paths.get("pics");
+            Path uploadDir = Paths.get(picsDir);
             if (!Files.exists(uploadDir)) {
                 Files.createDirectories(uploadDir);
             }
@@ -70,7 +75,7 @@ public class AppService {
     }
 
     public byte[] getProfilePicture(String email) throws IOException {
-        Path imagePath = Paths.get("pics", email + ".jpg");
+        Path imagePath = Paths.get(picsDir, email + ".jpg");
         if (!Files.exists(imagePath)) {
             return null;
         }
@@ -90,12 +95,6 @@ public class AppService {
 
     public Optional<InfoDto> getPublicProfile(String email) {
         var userOpt = userRepo.findById(email);
-        return userOpt.map(user -> new InfoDto(
-                user.getEmail(),
-                user.getFirstName(),
-                user.getLastName(),
-                user.getImageUrl(),
-                user.getLinks().stream().map(l -> new LinkDto(l.getTitle(), l.getUrl())).toList()
-        ));
+        return userOpt.map(user -> new InfoDto(user.getEmail(), user.getFirstName(), user.getLastName(), user.getImageUrl(), user.getLinks().stream().map(l -> new LinkDto(l.getTitle(), l.getUrl())).toList()));
     }
 }
