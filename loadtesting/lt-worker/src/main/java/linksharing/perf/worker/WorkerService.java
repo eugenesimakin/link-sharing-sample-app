@@ -3,6 +3,7 @@ package linksharing.perf.worker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationContext;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -25,11 +26,15 @@ public class WorkerService {
     private static final Logger log = LoggerFactory.getLogger(WorkerService.class);
 
     private final RestTemplate rest;
-
     private final AtomicReference<Status> statusRef = new AtomicReference<>(Status.READY);
     private final Queue<Metric> metricsQueue;
     private final ApplicationContext context;
-    //    private ExecutorService executor = Executors.newCachedThreadPool();
+
+    @Value("${master.host}")
+    private String masterHost;
+    @Value("${master.port}")
+    private int masterPort;
+
     private ExecutorService executor;
     private Timer rumpUpTimer;
     private Timer stopTimer;
@@ -112,7 +117,7 @@ public class WorkerService {
                 var headers = new HttpHeaders();
                 headers.setContentType(MediaType.APPLICATION_JSON);
                 var request = new HttpEntity<>(metricsToSend, headers);
-                rest.postForEntity("http://master.internal:8080/api/workers/metrics", request, String.class);
+                rest.postForEntity("http://" + masterHost + ":" + masterPort + "/api/workers/metrics", request, String.class);
             }
         };
         sendMetricsTimer.scheduleAtFixedRate(sendMetricsTask, 1000, 1000);
