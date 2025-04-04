@@ -114,6 +114,10 @@
 
     createApp({
         mounted() {
+            const savedConfig = localStorage.getItem('config');
+            if (savedConfig) {
+                this.config = JSON.parse(savedConfig);
+            }
             fetch('/api/reset', {
                 method: 'POST',
                 headers: {
@@ -162,6 +166,14 @@
             canStartTest() {
                 return this.workers.length > 0 && this.workers.every(w => w === 'ready');
             },
+        },
+        watch: {
+            config: {
+                handler(newConfig) {
+                    localStorage.setItem('config', JSON.stringify(newConfig));
+                },
+                deep: true
+            }
         },
         methods: {
             async startLoadTest() {
