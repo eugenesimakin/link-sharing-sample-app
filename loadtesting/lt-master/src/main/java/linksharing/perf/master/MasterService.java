@@ -118,8 +118,12 @@ public class MasterService {
             requestsFailed += metrics.stream().filter(metric -> metric.getErrorCode() > 0).count();
             double nextAverageResponseTime = metrics.stream()
                     .mapToLong(Metric::getResponseTime)
+                    .filter(time -> time > 0)
                     .average()
-                    .orElseThrow();
+                    .orElse(0);
+            if (nextAverageResponseTime == 0) {
+                return;
+            }
             if (averageResponseTime != null) {
                 nextAverageResponseTime = ((double) averageResponseTime + nextAverageResponseTime) / 2;
             }

@@ -106,13 +106,16 @@ public class WorkerService {
         var sendMetricsTask = new TimerTask() {
             @Override
             public void run() {
-                var metricsToSend = new ArrayList<>();
+                var metricsToSend = new ArrayList<Metric>();
                 while (!metricsQueue.isEmpty()) {
                     var m = metricsQueue.poll();
                     if (m == null) continue;
                     metricsToSend.add(m);
                 }
                 if (metricsToSend.isEmpty()) return;
+                if (statusRef.get() == Status.RAMPING_UP) {
+                    metricsToSend.forEach(m -> m.setResponseTime(0)); // cut out response time from stats on ramp up
+                }
 
                 var headers = new HttpHeaders();
                 headers.setContentType(MediaType.APPLICATION_JSON);
