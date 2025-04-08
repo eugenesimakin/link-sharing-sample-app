@@ -1,6 +1,7 @@
 package linksharing.service;
 
 import linksharing.db.Link;
+import linksharing.db.LinkRepository;
 import linksharing.db.User;
 import linksharing.db.UserRepository;
 import linksharing.dto.LinkDto;
@@ -37,13 +38,15 @@ class AppServiceTest {
 
     @Autowired
     private UserRepository userRepository;
+    @Autowired
+    private LinkRepository linkRepo;
 
     private AppService appService;
 
     @BeforeEach
     void setUp() {
         System.setProperty("pics.directory", tempDir.toString());
-        appService = new AppService(userRepository, tempDir.toString());
+        appService = new AppService(userRepository, linkRepo, tempDir.toString());
     }
 
     @AfterEach

@@ -1,6 +1,7 @@
 package linksharing.service;
 
 import linksharing.db.Link;
+import linksharing.db.LinkRepository;
 import linksharing.db.User;
 import linksharing.db.UserRepository;
 import linksharing.dto.InfoDto;
@@ -25,10 +26,12 @@ public class AppService {
     private static final Logger log = org.slf4j.LoggerFactory.getLogger(AppService.class);
 
     private final UserRepository userRepo;
+    private final LinkRepository linkRepo;
     private final String picsDir;
 
-    public AppService(UserRepository userRepo, @Value("${pics.directory}") String picsDir) {
+    public AppService(UserRepository userRepo, LinkRepository linkRepo, @Value("${pics.directory}") String picsDir) {
         this.userRepo = userRepo;
+        this.linkRepo = linkRepo;
         this.picsDir = picsDir;
     }
 
@@ -83,12 +86,13 @@ public class AppService {
     }
 
     public Optional<User> addLink(String email, LinkDto dto) {
-        log.info("Adding link for user: {}", email);
+        log.info("Adding link for user: {} {}", email, dto.url());
         var userOpt = userRepo.findById(email);
         if (userOpt.isPresent()) {
             var user = userOpt.get();
-            user.getLinks().add(new Link(null, dto.title(), dto.url(), user));
-            userRepo.save(user);
+            var newLink = new Link(null, dto.title(), dto.url(), user);
+            newLink.setUser(user);
+            linkRepo.save(newLink);
         }
         return userOpt;
     }

@@ -61,7 +61,7 @@ public class VirtualUser implements Runnable {
 
             if (isInterrupted()) break;
             for (int i = 0; i < rndNum(5, 8) && !isInterrupted(); i++) {
-                addLink(email, new LinkDto(faker.getName().name(), faker.getTheITCrowd().quotes()));
+                addLink(email, new LinkDto(faker.getName().name(), faker.getCommerce().productName()));
             }
 
             if (isInterrupted()) break;
@@ -147,7 +147,7 @@ public class VirtualUser implements Runnable {
         if (links.isEmpty()) return;
         int randomIndex = random.nextInt(links.size());
         LinkDto link = links.get(randomIndex);
-        timedRest.getForObject(targetBaseUrl + "/api/user/" + email + "/links/" + link.url, Void.class);
+        timedRest.postForObject(targetBaseUrl + "/api/user/" + email + "/links/" + link.url, null, Void.class);
     }
 
     int rndNum(int min, int max) {
