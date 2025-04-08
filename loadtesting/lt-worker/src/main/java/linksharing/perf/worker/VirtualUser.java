@@ -69,6 +69,9 @@ public class VirtualUser implements Runnable {
                 fetchPublicProfile(email);
             }
 
+            if (isInterrupted()) break;
+            InfoDto infoDto = fetchPublicProfile(email);
+            clickRandomLink(infoDto.links);
         }
     }
 
@@ -134,10 +137,17 @@ public class VirtualUser implements Runnable {
                 String.class);
     }
 
-    private void fetchPublicProfile(String email) {
-        timedRest.getForObject(
+    private InfoDto fetchPublicProfile(String email) {
+        return timedRest.getForObject(
                 targetBaseUrl + "/api/public/" + email,
                 InfoDto.class);
+    }
+
+    private void clickRandomLink(List<LinkDto> links) {
+        if (links.isEmpty()) return;
+        int randomIndex = random.nextInt(links.size());
+        LinkDto link = links.get(randomIndex);
+        timedRest.getForObject(targetBaseUrl + "/api/user/" + email + "/links/" + link.url, Void.class);
     }
 
     int rndNum(int min, int max) {

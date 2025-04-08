@@ -27,7 +27,7 @@ public class AppService {
     private final UserRepository userRepo;
     private final String picsDir;
 
-    public AppService(UserRepository userRepo, @Value("pics.directory") String picsDir) {
+    public AppService(UserRepository userRepo, @Value("${pics.directory}") String picsDir) {
         this.userRepo = userRepo;
         this.picsDir = picsDir;
     }

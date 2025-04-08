@@ -1,7 +1,9 @@
 package linksharing;
 
+import jakarta.servlet.http.HttpServletRequest;
 import linksharing.dto.LinkDto;
 import linksharing.dto.UserDto;
+import linksharing.metrics.MetricsService;
 import linksharing.service.AppService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -17,9 +19,11 @@ import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 public class ApiRestController {
 
     private final AppService appService;
+    private final MetricsService metricsService;
 
-    public ApiRestController(AppService appService) {
+    public ApiRestController(AppService appService, MetricsService metricsService) {
         this.appService = appService;
+        this.metricsService = metricsService;
     }
 
     @GetMapping("/api/check")
@@ -91,5 +95,16 @@ public class ApiRestController {
         return appService.getPublicProfile(email)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PostMapping("/api/user/{email}/links/{link}")
+    ResponseEntity<?> linkClicked(@PathVariable String email, @PathVariable String link, HttpServletRequest request) {
+        String userAgent = request.getHeader("User-Agent");
+        String clientIp = request.getHeader("X-Forwarded-For");
+        if (clientIp == null) {
+            clientIp = request.getRemoteAddr();
+        }
+        metricsService.linkClicked(email, link, userAgent, clientIp);
+        return ResponseEntity.ok().build();
     }
 }
