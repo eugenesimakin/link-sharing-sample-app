@@ -97,6 +97,15 @@ public class AppService {
         return userOpt;
     }
 
+    public void deleteLinks(String email) {
+        log.info("Deleting links for user: {}", email);
+        var userOpt = userRepo.findById(email);
+        if (userOpt.isPresent()) {
+            var user = userOpt.get();
+            linkRepo.deleteAll(user.getLinks());
+        }
+    }
+
     public Optional<InfoDto> getPublicProfile(String email) {
         var userOpt = userRepo.findById(email);
         return userOpt.map(user -> new InfoDto(user.getEmail(), user.getFirstName(), user.getLastName(), user.getImageUrl(), user.getLinks().stream().map(l -> new LinkDto(l.getTitle(), l.getUrl())).toList()));

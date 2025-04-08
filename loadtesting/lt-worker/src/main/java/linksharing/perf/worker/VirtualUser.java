@@ -60,6 +60,9 @@ public class VirtualUser implements Runnable {
             updateProfilePicture(email);
 
             if (isInterrupted()) break;
+            removeAllLinks(email);
+
+            if (isInterrupted()) break;
             for (int i = 0; i < rndNum(5, 8) && !isInterrupted(); i++) {
                 addLink(email, new LinkDto(faker.getName().name(), faker.getCommerce().productName()));
             }
@@ -135,6 +138,10 @@ public class VirtualUser implements Runnable {
                 targetBaseUrl + "/api/user/" + email + "/links",
                 linkDto,
                 String.class);
+    }
+
+    private void removeAllLinks(String email) {
+        rest.delete(targetBaseUrl + "/api/user/" + email + "/links");
     }
 
     private InfoDto fetchPublicProfile(String email) {

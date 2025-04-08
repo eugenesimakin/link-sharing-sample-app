@@ -90,6 +90,12 @@ public class ApiRestController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @DeleteMapping("/api/user/{email}/links")
+    ResponseEntity<?> deleteLinks(@PathVariable String email) {
+        appService.deleteLinks(email);
+        return ResponseEntity.ok().build();
+    }
+
     @GetMapping("/api/public/{email}")
     ResponseEntity<?> getPublicProfile(@PathVariable String email) {
         return appService.getPublicProfile(email)
