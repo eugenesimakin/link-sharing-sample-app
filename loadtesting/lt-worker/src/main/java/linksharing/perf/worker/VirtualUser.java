@@ -36,7 +36,7 @@ public class VirtualUser implements Runnable {
             @Qualifier("restTemplate") RestTemplate rest
     ) {
         this.timedRest = timedRest;
-        this.rest = rest; // non timed
+        this.rest = rest; // not timed
     }
 
     @PostConstruct
@@ -74,7 +74,7 @@ public class VirtualUser implements Runnable {
 
             if (isInterrupted()) break;
             InfoDto infoDto = fetchPublicProfile(email);
-            clickRandomLink(infoDto.links);
+            clickRandomLink(email, infoDto.links);
         }
     }
 
@@ -150,7 +150,7 @@ public class VirtualUser implements Runnable {
                 InfoDto.class);
     }
 
-    private void clickRandomLink(List<LinkDto> links) {
+    private void clickRandomLink(String email, List<LinkDto> links) {
         if (links.isEmpty()) return;
         int randomIndex = random.nextInt(links.size());
         LinkDto link = links.get(randomIndex);

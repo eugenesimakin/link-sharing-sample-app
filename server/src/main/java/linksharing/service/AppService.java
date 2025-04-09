@@ -29,7 +29,11 @@ public class AppService {
     private final LinkRepository linkRepo;
     private final String picsDir;
 
-    public AppService(UserRepository userRepo, LinkRepository linkRepo, @Value("${pics.directory}") String picsDir) {
+    public AppService(
+            UserRepository userRepo,
+            LinkRepository linkRepo,
+            @Value("${pics.directory:pics}") String picsDir
+    ) {
         this.userRepo = userRepo;
         this.linkRepo = linkRepo;
         this.picsDir = picsDir;
@@ -108,6 +112,12 @@ public class AppService {
 
     public Optional<InfoDto> getPublicProfile(String email) {
         var userOpt = userRepo.findById(email);
-        return userOpt.map(user -> new InfoDto(user.getEmail(), user.getFirstName(), user.getLastName(), user.getImageUrl(), user.getLinks().stream().map(l -> new LinkDto(l.getTitle(), l.getUrl())).toList()));
+        return userOpt.map(user -> new InfoDto(
+                user.getEmail(),
+                user.getFirstName(),
+                user.getLastName(),
+                user.getImageUrl(),
+                user.getLinks().stream().map(l -> new LinkDto(l.getTitle(), l.getUrl())).toList()
+        ));
     }
 }
